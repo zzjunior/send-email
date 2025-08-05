@@ -1,0 +1,24 @@
+* text=auto
+
+# Forçar arquivos PHP e configs como texto
+*.php text
+*.json text
+*.md text
+*.env text
+*.gitignore text
+*.gitattributes text
+*.lock text
+*.yml text
+*.yaml text
+*.xml text
+*.csv text
+*.xlsx text
+*.xls text
+
+# Normalizar fim de linha
+*.php eol=lf
+*.js eol=lf
+*.css eol=lf
+*.json eol=lf
+*.md eol=lf
+*.env eol=lf

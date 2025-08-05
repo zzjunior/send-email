@@ -1,0 +1,10 @@
+{
+  "name": "send-email",
+  "version": "1.0.0",
+  "description": "Envio de e-mails em massa via SendGrid com upload de planilhas.",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {}
+}

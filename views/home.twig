@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Envio de E-mails em Massa</title>
+</head>
+<body>
+    <h2>Envio de E-mails em Massa</h2>
+    <form method="POST" action="/send-emails" enctype="multipart/form-data">
+        <label>Selecione a planilha (CSV, XLS, XLSX):</label><br>
+        <input type="file" name="file" required><br><br>
+        <button type="submit">Enviar</button>
+    </form>
+</body>
+</html>

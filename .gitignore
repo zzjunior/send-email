@@ -1,0 +1,27 @@
+
+# Composer
+vendor/
+composer.lock
+
+# IDEs
+.idea/
+.vscode/
+
+# Sistema
+*.log
+*.tmp
+*.swp
+*.bak
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Arquivos de ambiente
+.env
+.env.*
+
+# Cache
+cache/
+tmp/
+node_modules/
+public/storage/
