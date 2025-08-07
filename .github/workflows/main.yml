@@ -1,4 +1,4 @@
-name: Deploy Sistema de E-mails
+name: Deploy
 
 on:
   push:
