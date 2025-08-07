@@ -1,6 +1,10 @@
 <?php
 require __DIR__ . '/../vendor/autoload.php';
 
+// Carrega as variáveis de ambiente
+$dotenv = Dotenv\Dotenv::createImmutable(__DIR__ . '/../');
+$dotenv->load();
+
 use Slim\Factory\AppFactory;
 use Slim\Views\Twig;
 use Slim\Views\TwigMiddleware;

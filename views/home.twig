@@ -2,14 +2,348 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Envio de E-mails em Massa</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Send-mail</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .template-preview-container {
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            background: #f8f9fa;
+        }
+        .template-preview iframe {
+            width: 100%;
+            height: 350px;
+            border: none;
+            border-radius: 6px;
+        }
+        .preview-thumbnail {
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .preview-thumbnail:hover {
+            transform: scale(1.02);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .template-selector {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            padding: 15px;
+            font-weight: 600;
+        }
+        .template-selector:focus {
+            box-shadow: 0 0 0 0.25rem rgba(102, 126, 234, 0.25);
+        }
+    </style>
 </head>
-<body>
-    <h2>Envio de E-mails em Massa</h2>
-    <form method="POST" action="/send-emails" enctype="multipart/form-data">
-        <label>Selecione a planilha (CSV, XLS, XLSX):</label><br>
-        <input type="file" name="file" required><br><br>
-        <button type="submit">Enviar</button>
-    </form>
+<body class="bg-gray-100">
+    <div class="container mx-auto px-4 py-8">
+        <div class="max-w-6xl mx-auto bg-white rounded-xl shadow-lg overflow-hidden">
+            <div class="bg-gradient-to-r from-blue-600 to-green-600 text-white p-6 text-center">
+                <h1 class="text-3xl font-bold mb-2">Send-mail</h1>
+                <p class="text-blue-100">Envie e-mails personalizados com templates profissionais</p>
+            </div>
+
+            <div class="row g-0">
+                <!-- Formulário -->
+                <div class="col-lg-6 p-6">
+                    <form id="emailForm" method="POST" action="/send-emails" enctype="multipart/form-data" class="space-y-4">
+                        
+                        <!-- Upload de Arquivo -->
+                        <div class="form-group">
+                            <label for="file" class="form-label flex items-center">
+                                <i class="fas fa-paperclip mr-2"></i>
+                                📎 Planilha de Contatos
+                            </label>
+                            <input type="file" name="file" id="file" accept=".csv,.xls,.xlsx" required 
+                                   class="form-control border-2 border-gray-300 rounded-lg p-3 focus:border-blue-500 focus:ring-2 focus:ring-blue-200">
+                            <small class="text-muted">Formatos: CSV, XLS, XLSX (colunas: Email, Nome)</small>
+                        </div>
+
+                        <!-- Assunto -->
+                        <div class="form-group">
+                            <label for="subject" class="form-label">📝 Assunto do E-mail</label>
+                            <input type="text" name="subject" id="subject" required 
+                                   placeholder="Digite o assunto do e-mail"
+                                   class="form-control border-2 border-gray-300 rounded-lg p-3 focus:border-blue-500 focus:ring-2 focus:ring-blue-200">
+                        </div>
+
+                        <!-- Template -->
+                        <div class="form-group">
+                            <label for="template" class="form-label">🎨 Template do E-mail</label>
+                            <select name="template" id="template" onchange="updateTemplatePreview()" 
+                                    class="template-selector form-select text-blue-300">
+                                <option value="promotional"> Promocional - Campanhas e ofertas</option>
+                                <option value="newsletter"> Newsletter - Informativos profissionais</option>
+                                <option value="modern"> Moderno - Design elegante com gradiente</option>
+                                <option value="notificacaoteiacrm"> TEIA CRM - Notificações institucionais</option>
+                            </select>
+                        </div>
+
+                        <!-- Mensagem -->
+                        <div class="form-group">
+                            <label for="message" class="form-label">💬 Mensagem</label>
+                            <textarea name="message" id="message" rows="4" 
+                                      placeholder="Digite a mensagem personalizada (opcional para template TEIA CRM)"
+                                      class="form-control border-2 border-gray-300 rounded-lg p-3 focus:border-blue-500 focus:ring-2 focus:ring-blue-200"></textarea>
+                        </div>
+
+                        <!-- Opções Avançadas -->
+                        <div class="border-top pt-4">
+                            <div class="form-check mb-3">
+                                <input type="checkbox" id="showAdvanced" onchange="toggleAdvanced()" class="form-check-input">
+                                <label class="form-check-label" for="showAdvanced">
+                                    ⚙️ Mostrar variáveis personalizadas
+                                </label>
+                            </div>
+                            
+                            <div class="template-vars" id="templateVars" style="display: none;">
+                                <label class="form-label">Variáveis Personalizadas:</label>
+                                <div id="varsContainer">
+                                    <div class="d-flex gap-2 mb-2">
+                                        <input type="text" placeholder="Nome da variável" name="var_name[]" class="form-control">
+                                        <input type="text" placeholder="Valor" name="var_value[]" class="form-control">
+                                        <button type="button" onclick="addVarInput()" class="btn btn-outline-primary">+</button>
+                                    </div>
+                                </div>
+                                <small class="text-muted">Ex: button_text, button_url, call_to_action, etc.</small>
+                            </div>
+                        </div>
+
+                        <!-- Botão Enviar -->
+                        <button type="submit" class="btn w-100 py-3 mt-4" 
+                                style="background: linear-gradient(135deg, #66ea8eff 0%, #4ba257ff 100%); border: none; color: white; font-weight: bold; border-radius: 10px;">
+                            Enviar
+                        </button>
+                    </form>
+
+                    <!-- Loading e Resultado -->
+                    <div id="loading" class="text-center mt-4" style="display: none;">
+                        <div class="spinner-border text-primary" role="status"></div>
+                        <p class="mt-2">📤 Enviando e-mails... Aguarde.</p>
+                    </div>
+
+                    <div id="result" class="mt-4" style="display: none;"></div>
+                </div>
+
+                <!-- Preview do Template -->
+                <div class="col-lg-6 bg-gray-50 p-6">
+                    <h3 class="text-xl font-bold mb-4 text-gray-800">👁️ Visualização do Template</h3>
+                    
+                    <div class="template-preview-container">
+                        <div id="templatePreview" class="template-preview p-4">
+                            <!-- Preview será carregado aqui -->
+                        </div>
+                    </div>
+
+                    <div class="mt-4">
+                        <h5 class="font-semibold text-gray-700 mb-2">📋 Informações do Template:</h5>
+                        <div id="templateInfo" class="bg-white p-3 rounded-lg border">
+                            <p class="text-sm text-gray-600 mb-0">Selecione um template para ver a descrição</p>
+                        </div>
+                    </div>
+
+                    <div class="mt-4">
+                        <h5 class="font-semibold text-gray-700 mb-2">🔧 Variáveis Disponíveis:</h5>
+                        <div id="templateVariables" class="bg-white p-3 rounded-lg border">
+                            <p class="text-sm text-gray-600 mb-0">As variáveis aparecerão aqui</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        // Cache dos templates carregados
+        let templateCache = {};
+        
+        async function updateTemplatePreview() {
+            console.log('updateTemplatePreview chamado');
+            const templateSelect = document.getElementById('template');
+            const templateName = templateSelect.value;
+            console.log('Template selecionado:', templateName);
+            
+            try {
+                // Verifica se já temos o template em cache
+                if (!templateCache[templateName]) {
+                    console.log('Carregando template do servidor...');
+                    const response = await fetch(`/template-preview/${templateName}`);
+                    if (!response.ok) {
+                        throw new Error(`Erro ao carregar template: ${response.status}`);
+                    }
+                    templateCache[templateName] = await response.json();
+                    console.log('Template carregado:', templateCache[templateName]);
+                }
+                
+                const config = templateCache[templateName];
+                
+                // Atualiza preview
+                const previewElement = document.getElementById('templatePreview');
+                if (previewElement && config.preview) {
+                    // Cria um iframe para renderizar o HTML de forma isolada
+                    previewElement.innerHTML = `
+                        <iframe srcdoc="${config.preview.replace(/"/g, '&quot;')}" 
+                                style="width:100%;height:400px;border:none;border-radius:8px;background:white;">
+                        </iframe>
+                    `;
+                    console.log('Preview atualizado com sucesso');
+                } else {
+                    console.error('Elemento templatePreview não encontrado ou preview vazio');
+                }
+                
+                // Atualiza informações
+                const infoElement = document.getElementById('templateInfo');
+                if (infoElement && config.name && config.description) {
+                    infoElement.innerHTML = `
+                        <h6 class="fw-bold text-primary mb-2">${config.name}</h6>
+                        <p class="text-sm text-gray-600 mb-0">${config.description}</p>
+                    `;
+                    console.log('Info atualizada com sucesso');
+                }
+                
+                // Atualiza variáveis disponíveis
+                if (config.variables && config.variables.length > 0) {
+                    const variablesHtml = config.variables.map(variable => 
+                        `<span class="badge bg-light text-dark me-1 mb-1">${variable}</span>`
+                    ).join('');
+                    
+                    const variablesElement = document.getElementById('templateVariables');
+                    if (variablesElement) {
+                        variablesElement.innerHTML = `
+                            <div class="d-flex flex-wrap gap-1">
+                                ${variablesHtml}
+                            </div>
+                            <small class="text-muted d-block mt-2">Use estas variáveis nas opções avançadas</small>
+                        `;
+                        console.log('Variáveis atualizadas com sucesso');
+                    }
+                }
+
+                // Ajustar placeholder da mensagem baseado no template
+                const messageField = document.getElementById('message');
+                if (messageField) {
+                    if (templateName === 'notificacaoteiacrm') {
+                        messageField.placeholder = 'Mensagem personalizada (opcional - template já possui conteúdo)';
+                        messageField.required = false;
+                    } else {
+                        messageField.placeholder = 'Digite a mensagem que será enviada para todos os contatos';
+                        messageField.required = true;
+                    }
+                    console.log('Placeholder da mensagem atualizado');
+                }
+                
+            } catch (error) {
+                console.error('Erro ao carregar template:', error);
+                const previewElement = document.getElementById('templatePreview');
+                if (previewElement) {
+                    previewElement.innerHTML = `
+                        <div class="alert alert-danger">
+                            <h6>Erro ao carregar preview</h6>
+                            <p class="mb-0">${error.message}</p>
+                        </div>
+                    `;
+                }
+            }
+        }
+        
+        function toggleAdvanced() {
+            const vars = document.getElementById('templateVars');
+            const checkbox = document.getElementById('showAdvanced');
+            vars.style.display = checkbox.checked ? 'block' : 'none';
+        }
+        
+        function addVarInput() {
+            const container = document.getElementById('varsContainer');
+            const div = document.createElement('div');
+            div.className = 'd-flex gap-2 mb-2';
+            div.innerHTML = `
+                <input type="text" placeholder="Nome da variável" name="var_name[]" class="form-control">
+                <input type="text" placeholder="Valor" name="var_value[]" class="form-control">
+                <button type="button" onclick="this.parentElement.remove()" class="btn btn-outline-danger">-</button>
+            `;
+            container.appendChild(div);
+        }
+        
+        document.getElementById('emailForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('result').style.display = 'none';
+            
+            const formData = new FormData(this);
+            
+            // Processa variáveis personalizadas
+            const varNames = formData.getAll('var_name[]');
+            const varValues = formData.getAll('var_value[]');
+            const templateVars = {};
+            
+            for (let i = 0; i < varNames.length; i++) {
+                if (varNames[i] && varValues[i]) {
+                    templateVars[varNames[i]] = varValues[i];
+                }
+            }
+            
+            if (Object.keys(templateVars).length > 0) {
+                formData.append('template_vars', JSON.stringify(templateVars));
+            }
+            
+            fetch('/send-emails', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('loading').style.display = 'none';
+                const result = document.getElementById('result');
+                result.style.display = 'block';
+                
+                if (data.enviados > 0) {
+                    result.className = 'alert alert-success';
+                    result.innerHTML = `
+                        <h5 class="alert-heading">✅ Sucesso!</h5>
+                        <p><strong>${data.enviados}</strong> de <strong>${data.total}</strong> e-mails enviados com sucesso.</p>
+                        <p class="mb-0">Template usado: <strong>${data.template_usado}</strong></p>
+                        ${data.erros && data.erros.length > 0 ? '<hr><p class="mb-0">Alguns erros ocorreram:</p><ul class="mb-0">' + data.erros.map(erro => '<li>' + erro + '</li>').join('') + '</ul>' : ''}
+                    `;
+                } else {
+                    result.className = 'alert alert-danger';
+                    result.innerHTML = `
+                        <h5 class="alert-heading">❌ Erro!</h5>
+                        <p>Nenhum e-mail foi enviado com sucesso.</p>
+                        ${data.error ? '<p>' + data.error + '</p>' : ''}
+                        ${data.erros && data.erros.length > 0 ? '<p>Erros encontrados:</p><ul>' + data.erros.map(erro => '<li>' + erro + '</li>').join('') + '</ul>' : ''}
+                    `;
+                }
+            })
+            .catch(error => {
+                document.getElementById('loading').style.display = 'none';
+                const result = document.getElementById('result');
+                result.style.display = 'block';
+                result.className = 'alert alert-danger';
+                result.innerHTML = `
+                    <h5 class="alert-heading">❌ Erro!</h5>
+                    <p>Erro na comunicação com o servidor: ${error.message}</p>
+                `;
+            });
+        });
+        
+        // Inicializa preview do template
+        console.log('Inicializando preview do template...');
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM carregado, chamando updateTemplatePreview');
+            updateTemplatePreview();
+        });
+    </script>
 </body>
 </html>

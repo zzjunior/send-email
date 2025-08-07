@@ -1,0 +1,173 @@
+name: Deploy Sistema de E-mails
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    name: Test PHP Application
+    
+    steps:
+    - name: Ch        echo ""
+        echo "   1. Ler o INSTALACAO_HOSTINGER.md"
+        echo "   2. Criar arquivo .env"
+        echo "   3. Configurar chave do SendGrid"
+        echo "   4. Testar no navegador"
+        echo ""
+        echo "Configurações aplicadas:"
+        echo "   • Memory: 256M"
+        echo "   • Tempo máximo: 300s"
+        echo "   • Upload: até 10M"
+      uses: actions/checkout@v4
+      
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.3'
+        extensions: mbstring, xml, ctype, iconv, intl, pdo, pdo_mysql, dom, filter, gd, iconv, json, mbstring, pdo
+        tools: composer:v2
+        
+    - name: Get composer cache directory
+      id: composer-cache
+      run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+      
+    - name: Cache composer dependencies
+      uses: actions/cache@v3
+      with:
+        path: ${{ steps.composer-cache.outputs.dir }}
+        key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+        restore-keys: ${{ runner.os }}-composer-
+        
+    - name: Install Composer dependencies
+      run: composer install --no-progress --prefer-dist --optimize-autoloader --no-dev
+      
+    - name: Validate composer.json and composer.lock
+      run: composer validate --strict
+      
+    - name: Check PHP syntax errors
+      run: find . -name "*.php" -not -path "./vendor/*" -exec php -l {} \;
+      
+    - name: Run basic tests
+      run: |
+        php -r "require 'vendor/autoload.php'; echo 'Autoload OK\n';"
+        test -f templates/promotional.html || exit 1
+        test -f templates/newsletter.html || exit 1
+        test -f templates/modern.html || exit 1
+        test -f templates/notificacaoteiacrm.html || exit 1
+        echo "Templates prontos"
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    name: Deploy to Production
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.3'
+        extensions: mbstring, xml, ctype, iconv, intl, pdo, pdo_mysql, dom, filter, gd, iconv, json, mbstring, pdo
+        tools: composer:v2
+        
+    - name: Install Composer dependencies (Production)
+      run: composer install --no-progress --prefer-dist --optimize-autoloader --no-dev --classmap-authoritative
+      
+    - name: Prepare for Hostinger deployment
+      run: |
+        # Remove arquivos que não vão para produção
+        rm -rf .git .github tests
+        rm -f .gitignore README.md test_env.php exemplo_contatos.csv
+        rm -f composer.json composer.lock package.json
+        # .htaccess para Hostinger
+        cat > public/.htaccess << 'EOF'
+        RewriteEngine On
+        RewriteCond %{REQUEST_FILENAME} !-f
+        RewriteCond %{REQUEST_FILENAME} !-d
+        RewriteRule ^ index.php [QSA,L]
+        Options -Indexes
+        <Files ".env">
+            Order allow,deny
+            Deny from all
+        </Files>
+        php_value max_execution_time 300
+        php_value memory_limit 256M
+        php_value upload_max_filesize 10M
+        php_value post_max_size 10M
+        EOF
+        # Exemplo de .env
+        cat > .env.example << 'EOF'
+        SENDGRID_API_KEY=SG.sua_chave_aqui
+        MAIL_FROM=no-reply@seudominio.com
+        MAIL_FROM_NAME="Sua Empresa"
+        COMPANY_NAME="Sua Empresa"
+        COMPANY_ADDRESS="Seu Endereço Completo"
+        COMPANY_PHONE="(11) 99999-9999"
+        COMPANY_EMAIL="contato@seudominio.com"
+        SENDER_NAME="Equipe Sua Empresa"
+        UNSUBSCRIBE_URL="https://seudominio.com/unsubscribe"
+        EOF
+        # Guia Hostinger
+        cat > INSTALACAO_HOSTINGER.md << 'EOF'
+        Instalação no Hostinger:
+        1. Envie tudo para public_html (arquivos de public/ vão na raiz)
+        2. Estrutura final:
+           public_html/
+             index.php
+             .htaccess
+             src/
+             routes/
+             vendor/
+             views/
+             templates/
+             .env (crie a partir do .env.example)
+        3. Copie .env.example para .env e ajuste as variáveis
+        4. Acesse seu domínio e teste o envio
+        EOF
+        
+    - name: Create deployment package
+      run: |
+        mkdir -p hostinger_deploy
+        cp public/* hostinger_deploy/ 2>/dev/null || :
+        cp -r src routes vendor views templates hostinger_deploy/
+        cp .env.example hostinger_deploy/
+        cp INSTALACAO_HOSTINGER.md hostinger_deploy/
+        cd hostinger_deploy
+        zip -r ../hostinger-send-email.zip . -x "*.git*" "node_modules/*"
+        cd ..
+        echo "Pacote zip gerado para Hostinger"
+        
+    - name: Upload deployment artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: hostinger-send-email
+        path: hostinger-send-email.zip
+        retention-days: 30
+        
+    - name: Deploy to Hostinger via FTP
+      uses: SamKirkland/FTP-Deploy-Action@v4.3.4
+      with:
+        server: ${{ secrets.FTP_HOST }}
+        username: ${{ secrets.FTP_USER }}
+        password: ${{ secrets.FTP_PASSWORD }}
+        local-dir: ./hostinger_deploy/
+        server-dir: /public_html/
+        exclude: |
+          **/.git*
+          **/node_modules/**
+          .env
+          composer.json
+          composer.lock
+        
+    - name: Deployment Summary
+      run: |
+        echo "Deploy finalizado."
+        echo "Arquivos enviados para public_html."
+        echo "Leia o INSTALACAO_HOSTINGER.md para instruções."

@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{subject}}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        .container {
+            background-color: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .logo {
+            max-width: 200px;
+            margin-bottom: 20px;
+        }
+        .content {
+            margin-bottom: 30px;
+        }
+        .highlight {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #dee2e6;
+            color: #6c757d;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>{{company_name}}</h1>
+            <h2>{{subject}}</h2>
+        </div>
+        
+        <div class="content">
+            <p>Prezado(a) {{name}},</p>
+            
+            <p>{{message}}</p>
+            
+            {{#if highlight_message}}
+            <div class="highlight">
+                <strong>{{highlight_message}}</strong>
+            </div>
+            {{/if}}
+            
+            <p>{{additional_info}}</p>
+            
+            <p>Cordialmente,<br>
+            {{sender_name}}<br>
+            {{company_name}}</p>
+        </div>
+        
+        <div class="footer">
+            <p>{{company_name}}</p>
+            <p>{{company_address}}</p>
+            <p>{{company_phone}} | {{company_email}}</p>
+        </div>
+    </div>
+</body>
+</html>
