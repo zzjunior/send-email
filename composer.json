@@ -1,4 +1,7 @@
 {
+    "name": "zzjunior/send-email",
+    "description": "Sistema PHP para envio de e-mails em massa com Slim e SendGrid e outros.",
+    "license": "mit",
     "require": {
         "slim/slim": "^4.0",
         "slim/psr7": "^1.3",
