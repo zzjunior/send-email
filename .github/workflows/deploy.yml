@@ -135,7 +135,7 @@ jobs:
         echo "Pacote zip gerado para Hostinger"
         
     - name: Upload deployment artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: hostinger-send-email
         path: hostinger-send-email.zip
