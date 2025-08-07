@@ -10,18 +10,8 @@ jobs:
   test:
     runs-on: ubuntu-latest
     name: Test PHP Application
-    
     steps:
-    - name: Ch        echo ""
-        echo "   1. Ler o INSTALACAO_HOSTINGER.md"
-        echo "   2. Criar arquivo .env"
-        echo "   3. Configurar chave do SendGrid"
-        echo "   4. Testar no navegador"
-        echo ""
-        echo "Configurações aplicadas:"
-        echo "   • Memory: 256M"
-        echo "   • Tempo máximo: 300s"
-        echo "   • Upload: até 10M"
+    - name: Checkout code
       uses: actions/checkout@v4
       
     - name: Setup PHP
